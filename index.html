@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MES Final Confirm</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h2 { margin-top: 0; font-size: 1.2rem; color: #333; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; color: #555; }
+        input, button { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; }
+        #log-container { background: #222; color: #fff; font-family: 'Courier New', Courier, monospace; font-size: 0.8rem; padding: 15px; border-radius: 8px; height: 200px; overflow-y: auto; white-space: pre-wrap; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+        th { font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>⚙️ Cài đặt</h2>
+        <label>Cloudflare Worker URL:</label>
+        <input type="text" id="workerUrl" placeholder="https://your-worker.user.workers.dev" onchange="saveConfig()">
+        
+        <label>Chuỗi Cookie:</label>
+        <input type="text" id="cookie" placeholder="ASP.NET_SessionId=..." onchange="saveConfig()">
+    </div>
+
+    <div class="card">
+        <h2>🔍 Tra cứu & Xác nhận</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="packageGroup" placeholder="Nhập Package Group" style="flex: 1; margin-bottom: 0;">
+            <button onclick="getPackages()" style="width: 120px; margin-bottom: 0;">Tải DS</button>
+        </div>
+        
+        <div id="package-list"></div>
+        <div id="action-buttons" style="display: none; margin-top: 15px;">
+            <button onclick="confirmSelected()">✅ Xác nhận các mục đã chọn</button>
+        </div>
+        
+        <div id="log-container"></div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            ['workerUrl', 'cookie'].forEach(id => {
+                const val = localStorage.getItem(id);
+                if (val) document.getElementById(id).value = val;
+            });
+        }
+
+        function saveConfig() {
+            ['workerUrl', 'cookie'].forEach(id => {
+                localStorage.setItem(id, document.getElementById(id).value);
+            });
+        }
+        
+        const logContainer = document.getElementById('log-container');
+        function log(message, color = '#fff') {
+            const time = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `<span style="color: #888;">[${time}]</span> <span style="color: ${color};">${message}</span>\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        async function getPackages() {
+            const workerUrl = document.getElementById('workerUrl').value.trim();
+            const cookie = document.getElementById('cookie').value.trim();
+            const group = document.getElementById('packageGroup').value.trim();
+            
+            if (!workerUrl || !cookie || !group) {
+                return alert("Vui lòng nhập Worker URL, Cookie và Package Group.");
+            }
+            
+            log(`🔍 Đang tải danh sách cho group: ${group}`, '#0ff');
+            try {
+                const response = await fetch(`${workerUrl}/api/get-packages?group=${group}`, {
+                    headers: { 'X-MES-Cookie': cookie }
+                });
+                if (!response.ok) throw new Error(`Server báo lỗi: ${response.status}`);
+                
+                const data = await response.json();
+                if(data.error) throw new Error(data.error);
+
+                renderPackageList(data);
+                log(`✅ Đã tải ${data.length} package.`, '#0f0');
+
+            } catch (e) {
+                log(`❌ Lỗi tải danh sách: ${e.message}`, '#f00');
+            }
+        }
+        
+        function renderPackageList(packages) {
+            const container = document.getElementById('package-list');
+            if (packages.length === 0) {
+                container.innerHTML = "<p>Không tìm thấy package nào.</p>";
+                document.getElementById('action-buttons').style.display = 'none';
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" onchange="toggleAll(this)"></th>
+                            <th>MxPackage</th>
+                            <th>Status</th>
+                            <th>Seq No</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            packages.forEach(pkg => {
+                tableHTML += `
+                    <tr>
+                        <td><input type="checkbox" class="pkg-checkbox" data-seq="${pkg.SeqNo}"></td>
+                        <td>${pkg.MxPackage}</td>
+                        <td>${pkg.StatusName}</td>
+                        <td>${pkg.SeqNo}</td>
+                    </tr>
+                `;
+            });
+            tableHTML += `</tbody></table>`;
+            container.innerHTML = tableHTML;
+            document.getElementById('action-buttons').style.display = 'block';
+        }
+
+        function toggleAll(source) {
+            document.querySelectorAll('.pkg-checkbox').forEach(checkbox => {
+                checkbox.checked = source.checked;
+            });
+        }
+        
+        async function confirmSelected() {
+            const workerUrl = document.getElementById('workerUrl').value.trim();
+            const cookie = document.getElementById('cookie').value.trim();
+            const group = document.getElementById('packageGroup').value.trim();
+            const selectedCheckboxes = document.querySelectorAll('.pkg-checkbox:checked');
+
+            if (selectedCheckboxes.length === 0) {
+                return alert("Vui lòng chọn ít nhất một package để xác nhận.");
+            }
+            
+            log(`🚀 Bắt đầu quá trình confirm cho ${selectedCheckboxes.length} package...`, '#ff0');
+            
+            for (const checkbox of selectedCheckboxes) {
+                const seqNo = checkbox.dataset.seq;
+                log(`- Đang confirm Seq No: ${seqNo}...`, '#fff');
+                try {
+                    const response = await fetch(`${workerUrl}/api/confirm`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-MES-Cookie': cookie 
+                        },
+                        body: JSON.stringify({ packageGroup: group, seqNo: parseInt(seqNo) })
+                    });
+
+                    const result = await response.json();
+                    if (result.ok) {
+                        log(`  ✅ ${result.message}`, '#0f0');
+                        checkbox.parentElement.parentElement.style.backgroundColor = '#28a74533'; // Highlight green
+                    } else {
+                        log(`  ❌ ${result.message}`, '#f00');
+                        checkbox.parentElement.parentElement.style.backgroundColor = '#dc354533'; // Highlight red
+                    }
+                } catch(e) {
+                    log(`  💥 Lỗi hệ thống khi confirm Seq ${seqNo}: ${e.message}`, '#f00');
+                }
+            }
+            log(`🎉 Quá trình confirm đã hoàn tất!`, '#ff0');
+        }
+    </script>
+</body>
+</html>
