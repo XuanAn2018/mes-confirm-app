@@ -5,23 +5,142 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MES Final Confirm</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        h2 { margin-top: 0; font-size: 1.2rem; color: #333; }
-        label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; color: #555; }
-        input, button { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #ccc; }
-        #log-container { background: #222; color: #fff; font-family: 'Courier New', Courier, monospace; font-size: 0.8rem; padding: 15px; border-radius: 8px; height: 200px; overflow-y: auto; white-space: pre-wrap; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
-        th { font-size: 0.9rem; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #f0f2f5; 
+            margin: 0; 
+            padding: 10px; 
+            color: #333;
+        }
+        .card { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            margin-bottom: 15px; 
+        }
+        h2 { 
+            margin-top: 0; 
+            font-size: 1.2rem; 
+            color: #333; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: 500; 
+            font-size: 0.9rem; 
+            color: #555; 
+        }
+        input, button, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            box-sizing: border-box; 
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        button:disabled { 
+            background: #ccc; 
+        }
+        #log-container { 
+            background: #222; 
+            color: #fff; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 0.8rem; 
+            padding: 15px; 
+            border-radius: 8px; 
+            height: 200px; 
+            overflow-y: auto; 
+            white-space: pre-wrap; 
+            margin-top: 15px; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+        }
+        th, td { 
+            text-align: left; 
+            padding: 8px; 
+            border-bottom: 1px solid #ddd; 
+        }
+        th { 
+            font-size: 0.9rem; 
+            background-color: #f8f9fa;
+        }
+        .package-display-container {
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        .package-display-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .package-display-area {
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .copy-btn {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            background-color: #28a745;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+        .info-section {
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .info-section h3 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+        .flex-container {
+            display: flex;
+            gap: 10px;
+        }
+        .flex-container > * {
+            flex: 1;
+        }
+        .scrollable-table {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>⚙️ Cài đặt</h2>
+        <div class="info-section">
+            <h3>📝 Hướng dẫn cấu hình</h3>
+            <p>Nhập thông tin endpoint và cookie để kết nối với hệ thống MES. Cookie cần có quyền truy cập vào dữ liệu package.</p>
+        </div>
         <label>🔹 Endpoint:</label>
         <input type="text" id="workerUrl" value="https://mes-final-confirm.chiscoong-cloudflare-com.workers.dev" onchange="saveConfig()">
         
@@ -31,14 +150,41 @@
 
     <div class="card">
         <h2>🔍 Tra cứu & Xác nhận</h2>
+        <div class="info-section">
+            <h3>📋 Hướng dẫn sử dụng</h3>
+            <p>Nhập Package Group để tải danh sách package. Chọn các package cần xác nhận và nhấn nút "Xác nhận các mục đã chọn".</p>
+        </div>
         <div style="display: flex; gap: 10px;">
             <input type="text" id="packageGroup" placeholder="Nhập Package Group" style="flex: 1; margin-bottom: 0;">
             <button onclick="getPackages()" style="width: 120px; margin-bottom: 0;">Tải DS</button>
         </div>
         
-        <div id="package-list"></div>
+        <div class="scrollable-table">
+            <div id="package-list"></div>
+        </div>
+        
         <div id="action-buttons" style="display: none; margin-top: 15px;">
             <button onclick="confirmSelected()">✅ Xác nhận các mục đã chọn</button>
+        </div>
+        
+        <div id="package-display-section" style="display: none;">
+            <h3>📦 Danh sách Package (dùng cho Auto Register)</h3>
+            
+            <div class="package-display-container">
+                <div class="package-display-header">
+                    <label>Định dạng: package1 package2 package3</label>
+                    <button class="copy-btn" onclick="copyPackages('inline')">📋 Copy</button>
+                </div>
+                <div class="package-display-area" id="packages-inline"></div>
+            </div>
+            
+            <div class="package-display-container">
+                <div class="package-display-header">
+                    <label>Định dạng: mỗi package một dòng</label>
+                    <button class="copy-btn" onclick="copyPackages('multiline')">📋 Copy</button>
+                </div>
+                <div class="package-display-area" id="packages-multiline"></div>
+            </div>
         </div>
         
         <div id="log-container"></div>
@@ -86,6 +232,7 @@
                 if(data.error) throw new Error(data.error);
 
                 renderPackageList(data);
+                updatePackageDisplay(data);
                 log(`✅ Đã tải ${data.length} package.`, '#0f0');
 
             } catch (e) {
@@ -98,6 +245,7 @@
             if (packages.length === 0) {
                 container.innerHTML = "<p>Không tìm thấy package nào.</p>";
                 document.getElementById('action-buttons').style.display = 'none';
+                document.getElementById('package-display-section').style.display = 'none';
                 return;
             }
             
@@ -126,12 +274,41 @@
             tableHTML += `</tbody></table>`;
             container.innerHTML = tableHTML;
             document.getElementById('action-buttons').style.display = 'block';
+            document.getElementById('package-display-section').style.display = 'block';
         }
 
         function toggleAll(source) {
             document.querySelectorAll('.pkg-checkbox').forEach(checkbox => {
                 checkbox.checked = source.checked;
             });
+        }
+        
+        function updatePackageDisplay(packages) {
+            const packageNames = packages.map(pkg => pkg.MxPackage);
+            
+            // Định dạng inline (cách nhau bằng khoảng trắng)
+            document.getElementById('packages-inline').textContent = packageNames.join(' ');
+            
+            // Định dạng multiline (mỗi package một dòng)
+            document.getElementById('packages-multiline').textContent = packageNames.join('\n');
+        }
+        
+        function copyPackages(format) {
+            let textToCopy = '';
+            
+            if (format === 'inline') {
+                textToCopy = document.getElementById('packages-inline').textContent;
+            } else {
+                textToCopy = document.getElementById('packages-multiline').textContent;
+            }
+            
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    log(`✅ Đã copy ${format === 'inline' ? 'định dạng inline' : 'định dạng multiline'} vào clipboard`, '#0f0');
+                })
+                .catch(err => {
+                    log(`❌ Lỗi khi copy: ${err}`, '#f00');
+                });
         }
         
         async function confirmSelected() {
